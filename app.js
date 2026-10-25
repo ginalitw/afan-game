@@ -26,6 +26,24 @@
     { id: '05', stage: 2, sx: 3590, sy: 728 }
   ];
   POINTS.forEach(p => { STAGES[p.stage].pts = (STAGES[p.stage].pts || []).concat(p.id); });
+  // 第四版之二：每段只有離柵欄最近的立牌是關主（接稻穗小遊戲），其他立牌是輕互動直接拿飯糰
+  STAGES.forEach((g, i) => {
+    const ps = POINTS.filter(p => p.stage === i);
+    ps.reduce((a, b) => Math.abs(b.sx - g.gateX) < Math.abs(a.sx - g.gateX) ? b : a).boss = true;
+  });
+  const MINI_CYCLE = ['flip', 'hat', 'sparrow', 'knock'];
+  POINTS.filter(p => !p.boss).forEach((p, i) => { p.mini = MINI_CYCLE[i % MINI_CYCLE.length]; });
+  // 難度：第一段沿用原本，第二段落得更快葉子更多，第三段再加麻雀
+  const HARD = [
+    { spawn: 380, vMin: 140, vRange: 80, leaf: 0.25, sparrow: 0 },
+    { spawn: 320, vMin: 190, vRange: 100, leaf: 0.40, sparrow: 0 },
+    { spawn: 320, vMin: 190, vRange: 100, leaf: 0.40, sparrow: 1400 }
+  ];
+  const HINTS = [
+    '左右拖曳阿飯接住稻穗，金色稻穗加三束還能做成黃金飯糰',
+    '棚田關主：稻穗落得更快，葉子也更多，小心別接錯',
+    '遠山關主：麻雀會飛過來叼走稻穗，碰到阿飯還會偷走兩束，記得閃開'
+  ];
 
   const $ = id => document.getElementById(id);
   const canvas = $('scene'), ctx = canvas.getContext('2d');
@@ -328,7 +346,7 @@
     const p = st.targetPoint; st.targetS = null; st.targetPoint = null; st.frame = 1;
     if (!p) return;
     if (isDone(p.id)) { toast(`作品編號 ${p.id} 已經餵過了，阿飯吃得很飽`); return; }
-    startHarvest(p);
+    if (p.boss) startHarvest(p); else startMini(p);
   }
 
   // ---------- 主迴圈 ----------
@@ -521,8 +539,10 @@
   const H = { on: false };
   function startHarvest(p) {
     st.busy = true;
-    Object.assign(H, { on: true, p, score: 0, golden: false, items: [], t0: performance.now(), lastSpawn: 0, x: 0.5, ended: false, moveT: 0 });
-    $('h-label').textContent = `作品編號 ${p.id}`; $('h-score').textContent = '已收 0 束'; $('h-timer').textContent = '剩餘 10 秒';
+    const D = HARD[p.stage];
+    Object.assign(H, { on: true, p, D, score: 0, golden: false, items: [], birds: [], t0: performance.now(), lastSpawn: 0, lastBird: performance.now() - D.sparrow * 0.6, x: 0.5, ended: false, moveT: 0, hitT: 0 });
+    $('h-label').textContent = `${STAGES[p.stage].name}關主，作品編號 ${p.id}`; $('h-hint').textContent = HINTS[p.stage];
+    $('h-birds').innerHTML = ''; $('h-score').textContent = '已收 0 束'; $('h-timer').textContent = '剩餘 10 秒';
     $('h-items').innerHTML = ''; $('h-result').hidden = true; $('harvest').hidden = false;
     placeHarvestAfan(); requestAnimationFrame(stepHarvest);
   }
@@ -532,15 +552,36 @@
     const field = $('h-field'), fw = field.clientWidth, fh = field.clientHeight, el = now - H.t0;
     const left = Math.max(0, 10 - el / 1000);
     $('h-timer').textContent = `剩餘 ${Math.ceil(left)} 秒`;
-    if (now - H.lastSpawn > 380) {
+    const D = H.D, slow = reduceMotion ? 0.5 : 1;
+    if (now - H.lastSpawn > D.spawn) {
       H.lastSpawn = now; const r = Math.random();
-      const kind = r < 0.05 ? 'golden' : r < 0.75 ? 'rice' : 'leaf';
+      const kind = r < 0.05 ? 'golden' : r < 1 - D.leaf ? 'rice' : 'leaf';
       const img = document.createElement('img');
       img.src = kind === 'golden' ? 'sprites/rice_golden.png' : kind === 'rice' ? 'sprites/rice.png' : 'sprites/' + ['maple_red', 'maple_yellow', 'ginkgo', 'oak'][Math.floor(Math.random() * 4)] + '.png';
       img.alt = ''; $('h-items').appendChild(img);
-      H.items.push({ el: img, kind, x: 20 + Math.random() * (fw - 60), y: -50, v: (140 + Math.random() * 80) * (reduceMotion ? 0.5 : 1), last: now });
+      H.items.push({ el: img, kind, x: 20 + Math.random() * (fw - 60), y: -50, v: (D.vMin + Math.random() * D.vRange) * slow, last: now });
     }
     const ax = H.x * fw, ay = fh - 8 - 70;
+    if (D.sparrow && now - H.lastBird > D.sparrow) {
+      H.lastBird = now; const dir = Math.random() < 0.5 ? 1 : -1, img = document.createElement('img');
+      img.src = 'items/sparrow_4.webp'; img.alt = ''; $('h-birds').appendChild(img);
+      H.birds.push({ el: img, dir, x: dir > 0 ? -60 : fw + 10, y: ay - 80 + Math.random() * 70, v: (170 + Math.random() * 70) * slow, last: now, hit: false });
+    }
+    H.birds = H.birds.filter(b => {
+      const dt = Math.min(0.05, (now - b.last) / 1000); b.last = now; b.x += b.dir * b.v * dt;
+      const by = b.y + Math.sin(now / 90 + b.v) * 4;
+      b.el.style.transform = `translate(${b.x}px,${by}px) scaleX(${b.dir > 0 ? 1 : -1})`;
+      const cx = b.x + 27, cy = by + 20;
+      // 麻雀叼走飛過的稻穗
+      H.items = H.items.filter(it => { if (it.kind !== 'leaf' && Math.abs(it.x + 21 - cx) < 30 && Math.abs(it.y + 25 - cy) < 30) { it.el.remove(); return false; } return true; });
+      if (!b.hit && Math.abs(cx - ax) < 44 && cy > ay - 10 && cy < ay + 60) {
+        b.hit = true; H.score = Math.max(0, H.score - 2); H.hitT = now;
+        $('h-score').textContent = `已收 ${H.score} 束，被叼走兩束`; $('h-afan').classList.add('hit');
+      }
+      if (b.x < -80 || b.x > fw + 80) { b.el.remove(); return false; }
+      return true;
+    });
+    if (H.hitT && now - H.hitT > 500) { H.hitT = 0; $('h-afan').classList.remove('hit'); }
     H.items = H.items.filter(it => {
       const dt = Math.min(0.05, (now - it.last) / 1000); it.last = now; it.y += it.v * dt;
       it.el.style.transform = `translate(${it.x}px,${it.y}px)`;
@@ -556,7 +597,7 @@
     requestAnimationFrame(stepHarvest);
   }
   function finishHarvest(skipped) {
-    if (H.ended) return; H.ended = true;
+    if (H.ended) return; H.ended = true; $('h-afan').classList.remove('hit');
     let size = 'small', type = 'normal';
     if (!skipped) { size = H.score >= 12 ? 'large' : H.score >= 6 ? 'medium' : 'small'; type = H.golden ? 'golden' : 'normal'; }
     const res = $('h-result'); res.textContent = `收了 ${H.score} 束稻穗，做成${sizeLabel(size, type)}！`; res.hidden = false;
@@ -588,6 +629,76 @@
       }, 1300);
     }, 720);
   }
+
+  // ---------- 輕互動（非關主立牌，幾秒鐘，可跳過，直接給小飯糰） ----------
+  // 直接給的飯糰記成 small／normal：不用玩小遊戲，和小遊戲按跳過的結果一致，中大飯糰留給關主
+  const MINI_TITLE = { flip: '翻翻立牌', hat: '幫稻草人戴斗笠', sparrow: '找找麻雀', knock: '敲敲木樁' };
+  const MINI_HINT = { flip: '點一下立牌把它翻過來', hat: '把斗笠拖到稻草人頭上', sparrow: '麻雀躲在會沙沙動的稻叢裡，三次內點中牠', knock: '敲木樁三下，稻穗就會掉下來' };
+  const M = { on: false };
+  function startMini(p) {
+    st.busy = true;
+    Object.assign(M, { on: true, p, type: p.mini, done: false, tries: 3, knocks: 0 });
+    $('m-label').textContent = `作品編號 ${p.id}`; $('m-title').textContent = MINI_TITLE[p.mini];
+    $('m-hint').textContent = MINI_HINT[p.mini]; $('m-result').hidden = true;
+    const box = $('m-play'); box.className = 'm-play m-' + p.mini;
+    if (p.mini === 'flip') {
+      box.innerHTML = `<button class="flip" id="m-flip" type="button" aria-label="翻開立牌"><span class="face front"><b>作品編號</b><em>${p.id}</em></span><span class="face back"><span class="ph">Gina 的照片（之後放）</span><b>作品編號 ${p.id}</b></span></button>`;
+      $('m-flip').addEventListener('click', e => { e.currentTarget.classList.add('on'); miniDone(1300); });
+    } else if (p.mini === 'hat') {
+      box.innerHTML = `<div class="scare"><img src="items/scarecrow_nohat.webp" alt="稻草人" draggable="false"><span class="sign">作品編號 ${p.id}</span></div><img id="m-hat" class="hat" src="items/straw_hat.webp" alt="斗笠" draggable="false">`;
+      bindHat();
+    } else if (p.mini === 'sparrow') {
+      const right = Math.floor(Math.random() * 3);
+      M.right = right;
+      box.innerHTML = `<span class="sign">作品編號 ${p.id}</span><div class="bushes">${[0, 1, 2].map(i => `<button type="button" class="bush" data-i="${i}" aria-label="稻叢 ${i + 1}"><img src="sprites/rice.png" alt=""><img src="sprites/rice.png" alt=""><img src="sprites/rice.png" alt=""></button>`).join('')}</div>`;
+      box.querySelectorAll('.bush').forEach(b => b.addEventListener('click', () => tapBush(b)));
+    } else {
+      box.innerHTML = `<button type="button" class="post" id="m-post" aria-label="敲木樁"><span class="sign">作品編號 ${p.id}</span><span class="wood"></span></button><img id="m-drop" class="drop" src="sprites/rice.png" alt="" hidden><span id="m-count" class="count">還要敲 3 下</span>`;
+      $('m-post').addEventListener('click', knock);
+    }
+    $('mini').hidden = false;
+  }
+  function tapBush(b) {
+    if (M.done) return;
+    const i = +b.dataset.i;
+    if (i === M.right) { b.classList.add('found'); b.insertAdjacentHTML('beforeend', '<img class="bird" src="items/sparrow_3.webp" alt="麻雀">'); $('m-hint').textContent = '找到了！麻雀叼來一顆小飯糰'; return miniDone(1300); }
+    M.tries -= 1; b.classList.add('miss'); b.disabled = true;
+    if (M.tries <= 0) { const rb = $('m-play').querySelector(`.bush[data-i="${M.right}"]`); rb.classList.add('found'); rb.insertAdjacentHTML('beforeend', '<img class="bird" src="items/sparrow_3.webp" alt="麻雀">'); $('m-hint').textContent = '麻雀自己跳出來了，還是送你一顆小飯糰'; return miniDone(1300); }
+    $('m-hint').textContent = `不在這裡，還有 ${M.tries} 次機會`;
+  }
+  function knock() {
+    if (M.done) return;
+    M.knocks += 1; const post = $('m-post'); post.classList.remove('shake'); void post.offsetWidth; post.classList.add('shake');
+    $('m-count').textContent = M.knocks >= 3 ? '稻穗掉下來了' : `還要敲 ${3 - M.knocks} 下`;
+    if (M.knocks >= 3) { $('m-drop').hidden = false; requestAnimationFrame(() => $('m-drop').classList.add('fall')); miniDone(1300); }
+  }
+  function bindHat() {
+    const hat = $('m-hat'); let d = null;
+    hat.addEventListener('pointerdown', e => { if (M.done) return; d = { x: e.clientX, y: e.clientY, l: hat.offsetLeft, t: hat.offsetTop }; hat.setPointerCapture(e.pointerId); e.preventDefault(); });
+    hat.addEventListener('pointermove', e => { if (!d) return; hat.style.left = (d.l + e.clientX - d.x) + 'px'; hat.style.top = (d.t + e.clientY - d.y) + 'px'; });
+    const up = () => {
+      if (!d) return; d = null;
+      const h = hat.getBoundingClientRect(), s = $('m-play').querySelector('.scare img').getBoundingClientRect();
+      const headX = s.left + s.width * 0.5, headY = s.top + s.height * 0.22;
+      if (Math.abs(h.left + h.width / 2 - headX) < s.width * 0.3 && Math.abs(h.top + h.height * 0.6 - headY) < s.height * 0.16) { hatOn(); }
+    };
+    hat.addEventListener('pointerup', up); hat.addEventListener('pointercancel', up);
+  }
+  function hatOn() {
+    const hat = $('m-hat'), box = $('m-play'), s = box.querySelector('.scare img').getBoundingClientRect(), b = box.getBoundingClientRect();
+    // 斗笠在原圖約佔寬 55%，底緣在高度 25% 處
+    const w = s.width * 0.554; hat.style.width = w + 'px';
+    hat.style.left = (s.left - b.left + s.width * 0.228) + 'px'; hat.style.top = (s.top - b.top + s.height * 0.091) + 'px';
+    hat.classList.add('on'); $('m-hint').textContent = '稻草人戴好斗笠，謝謝你送的小飯糰';
+    miniDone(1300);
+  }
+  function miniDone(ms) {
+    if (M.done) return; M.done = true;
+    setTimeout(() => { $('m-result').textContent = '拿到小飯糰！'; $('m-result').hidden = false; }, Math.max(0, ms - 700));
+    setTimeout(closeMini, ms + 500);
+  }
+  function closeMini() { if (!M.on) return; M.on = false; M.done = true; $('mini').hidden = true; $('m-play').innerHTML = ''; feed(M.p, 'small', 'normal'); }
+  $('m-skip').addEventListener('click', closeMini);
 
   // ---------- 操作：點一下走過去，拖曳捲動 ----------
   let ptr = null;
@@ -621,13 +732,14 @@
   });
   $('reset').addEventListener('click', () => {
     records = []; saveRecords(); syncGatesFromRecords();
+    bonus = []; saveBonus(); renderBonus(); PROPS.forEach(p => { p.t0 = -1e9; });
     Object.assign(st, { afanS: sAtX(140), targetS: null, targetPoint: null, camX: 0, dir: 1, fogX: 0, busy: false, act: null, fly: null });
     st.maxS = st.afanS; renderStages(); toast('重新開始，阿飯回到村口了');
   });
   window.addEventListener('resize', resize);
 
   // 測試用掛勾（Playwright 驗證）
-  window.__afan = { PROPS, fx, get bonus() { return bonus; }, st, POINTS, STAGES, walkTo, sAtX, atS, tapAt, get records() { return records; } };
+  window.__afan = { PROPS, fx, get bonus() { return bonus; }, st, POINTS, STAGES, walkTo, sAtX, atS, tapAt, startMini, startHarvest, H, M, HARD, get records() { return records; } };
 
   renderStages(); renderBonus(); resize();
   loadAll().then(() => { measureTops(); requestAnimationFrame(loop); });

@@ -13,7 +13,7 @@
   <header class="hud">
     <div class="hud-row">
       <h1 class="title"><img src="sprites/onigiri.png" alt="">阿飯餵飯糰</h1>
-      <span class="ver">第四版之一</span>
+      <span class="ver">第四版之二</span>
       <span id="bonus" class="bonus" title="點小物每天各拿一次">小飯糰 0</span>
       <button id="reset" class="btn" type="button">重新開始</button>
     </div>
@@ -31,12 +31,24 @@
       <span id="h-score">已收 0 束</span>
       <button id="h-skip" class="btn" type="button">跳過</button>
     </div>
-    <p class="h-hint">左右拖曳阿飯接住稻穗，金色稻穗加三束還能做成黃金飯糰</p>
+    <p id="h-hint" class="h-hint">左右拖曳阿飯接住稻穗，金色稻穗加三束還能做成黃金飯糰</p>
     <div id="h-field" class="h-field">
       <div id="h-items"></div>
+      <div id="h-birds"></div>
       <div id="h-afan" class="h-afan"><img id="h-afan-img" src="scroll/afan/walk_1.png" alt="阿飯" draggable="false"></div>
     </div>
     <div id="h-result" class="h-result" hidden></div>
+  </div>
+
+  <div id="mini" class="overlay" role="dialog" aria-modal="true" aria-label="立牌小互動" hidden>
+    <div class="h-hud">
+      <span id="m-label">作品編號 01</span>
+      <span id="m-title">翻翻立牌</span>
+      <button id="m-skip" class="btn" type="button">跳過</button>
+    </div>
+    <p id="m-hint" class="h-hint"></p>
+    <div id="m-play" class="m-play"></div>
+    <div id="m-result" class="h-result" hidden></div>
   </div>
 
   <div id="card" class="overlay card-wrap" role="dialog" aria-modal="true" aria-label="收稻卡" hidden>
