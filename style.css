@@ -6,6 +6,7 @@ html,body{height:100%;background:#2b2118;overflow:hidden;font-family:"PingFang T
 .title{font-size:18px;color:#5a3b1c;display:flex;align-items:center;gap:6px;flex:1}
 .title img{width:26px;height:26px}
 .ver{font-size:12px;color:#8a6a3c;background:#efe1bf;border-radius:10px;padding:2px 8px}
+.bonus{font-size:12px;color:#7a4e12;background:#f6d58e;border-radius:10px;padding:2px 8px}
 .btn{font:inherit;font-size:13px;border:1.5px solid #8a6a3c;background:#fff8e8;color:#5a3b1c;border-radius:14px;padding:4px 12px;cursor:pointer}
 .btn-gold{background:#D9A03C;color:#fff;border-color:#a8741f;font-size:16px;padding:8px 22px}
 .stages{display:flex;gap:6px;margin-top:8px}

@@ -36,6 +36,182 @@
   const srcs = { far: 'scroll/far.webp', mid: 'scroll/mid.webp', near: 'scroll/near.webp', onigiri: 'sprites/onigiri.png', onigiriGold: 'sprites/onigiri_golden.png' };
   for (let i = 1; i <= 6; i++) srcs['walk' + i] = 'scroll/afan/walk_' + i + '.png';
   for (let i = 1; i <= 4; i++) srcs['act' + i] = 'scroll/afan/act_' + i + '.png';
+  // ---------- 互動小物（第四版之一） ----------
+  // 座標為原圖 4128x1024，x,y 是底部中心，h 是畫面高度（原圖單位）
+  const BONUS_KEY = 'afanV41PropBonus';
+  const PROPS = [
+    { id: 'smoke', kind: 'smoke', x: 846, y: 356, h: 190 },
+    { id: 'kaki', kind: 'kaki', x: 392, y: 404, h: 130 },
+    { id: 'cat', kind: 'cat', x: 262, y: 632, h: 66 },
+    { id: 'sparrow1', kind: 'sparrow', x: 762, y: 574, h: 48 },
+    { id: 'sparrow2', kind: 'sparrow', x: 1830, y: 548, h: 36, flip: true },
+    { id: 'rack', kind: 'rack', x: 1540, y: 684, h: 168 },
+    { id: 'rice1', kind: 'rice', x: 1680, y: 826, h: 72 },
+    { id: 'rice2', kind: 'rice', x: 2880, y: 598, h: 60 },
+    { id: 'rice3', kind: 'rice', x: 3420, y: 762, h: 62 },
+    { id: 'scare1', kind: 'scare', x: 2375, y: 882, h: 180 },
+    { id: 'scare2', kind: 'scare', x: 2544, y: 760, h: 124, flip: true },
+    { id: 'fly1', kind: 'fly', x: 1960, y: 600, h: 50, r: 80 },
+    { id: 'fly2', kind: 'fly', x: 3250, y: 560, h: 46, r: 70 }
+  ];
+  const FRAMES = { scare: 4, sparrow: 4, kaki: 3, rack: 3, dragonfly: 4, cat: 4, smoke: 4 };
+  Object.entries(FRAMES).forEach(([n, c]) => { for (let i = 1; i <= c; i++) srcs[n + i] = `items/${n === 'scare' ? 'scarecrow' : n === 'kaki' ? 'persimmon' : n}_${i}.webp`; });
+  srcs.kakiFruit = 'items/persimmon_fruit.webp'; srcs.kakiFallen = 'items/persimmon_fallen.webp'; srcs.rice = 'sprites/rice.png';
+  PROPS.forEach((p, i) => { p.t0 = -1e9; p.seed = i * 1.37; p.away = 0; });
+  let bonus = loadBonus();
+  const fx = []; // 掉落物，亮點，＋1
+  function loadBonus() {
+    try { const r = JSON.parse(localStorage.getItem(BONUS_KEY) || '[]'); return Array.isArray(r) ? r.filter(x => x && PROPS.some(p => p.id === x.p)).map(x => ({ p: x.p, d: String(x.d), n: Math.max(1, x.n | 0) })) : []; } catch (e) { return []; }
+  }
+  function saveBonus() { try { localStorage.setItem(BONUS_KEY, JSON.stringify(bonus)); } catch (e) { /* 略過 */ } }
+  const bonusTotal = () => bonus.reduce((a, b) => a + b.n, 0);
+  function renderBonus() { const el = $('bonus'); if (el) el.textContent = `小飯糰 ${bonusTotal()}`; }
+  function claimBonus(p, wx, wy) {
+    const d = today(), r = bonus.find(b => b.p === p.id);
+    if (r && r.d === d) return false;
+    if (r) { r.d = d; r.n += 1; } else bonus.push({ p: p.id, d, n: 1 });
+    saveBonus(); renderBonus();
+    fx.push({ type: 'plus', x: wx, y: wy, life: 1.4, t0: performance.now() });
+    return true;
+  }
+  const NAMES = { smoke: '炊煙', kaki: '柿子', cat: '貓咪', sparrow: '麻雀', rack: '稻架', rice: '稻穗', scare: '稻草人', fly: '紅蜻蜓' };
+
+  // 依目前狀態算出畫哪一格，位置與旋轉
+  function propPose(p, now) {
+    const t = (now - p.t0) / 1000, tt = now / 1000 + p.seed, rm = reduceMotion;
+    let key = null, dx = 0, dy = 0, rot = 0, pivot = 'bottom', alpha = 1, h = p.h, flip = !!p.flip, scaleX = 1;
+    switch (p.kind) {
+      case 'smoke': key = 'smoke' + (rm ? 3 : 1 + Math.floor(tt * 2.2) % 4); break;
+      case 'kaki':
+        key = 'kaki1'; pivot = 'top';
+        if (t < 1.4) { key = 'kaki' + (rm ? 2 : [1, 2, 3, 2, 1, 2, 1][Math.min(6, Math.floor(t * 5))]); if (!rm) rot = Math.sin(t * 9) * 0.12 * (1 - t / 1.4); }
+        else if (!rm) rot = Math.sin(tt * 1.1) * 0.015;
+        break;
+      case 'cat':
+        key = 'cat1';
+        if (t < 0.5) key = 'cat2'; else if (t < 2.0) key = 'cat3'; else if (t < 3.6) key = 'cat4'; else if (t < 4.1) key = 'cat2';
+        if (rm && t < 4.1) key = 'cat3';
+        if (key === 'cat1' && !rm) scaleX = 1 + Math.sin(tt * 1.6) * 0.012;
+        break;
+      case 'sparrow': {
+        key = 'sparrow' + (Math.floor(tt * 0.7) % 3 === 0 ? 1 : 2);
+        if (t < 7) {
+          if (rm) { key = t < 3 ? 'sparrow3' : 'sparrow2'; break; }
+          const dir = flip ? -1 : 1;
+          if (t < 0.25) key = 'sparrow3';
+          else if (t < 1.6) { key = 'sparrow4'; const u = (t - 0.25) / 1.35; dx = dir * u * 420; dy = -u * 260 - Math.sin(u * Math.PI) * 30; dy += Math.sin(t * 30) * 3; alpha = 1 - Math.max(0, u - 0.7) / 0.3; }
+          else if (t < 5.2) { key = null; }
+          else if (t < 6.6) { key = 'sparrow4'; const u = 1 - (t - 5.2) / 1.4; dx = -dir * u * 380; dy = -u * 220 + Math.sin(t * 30) * 3; alpha = Math.min(1, (1 - u) * 3); flip = !flip; }
+          else key = 'sparrow3';
+        }
+        break;
+      }
+      case 'rack':
+        key = 'rack1';
+        if (t < 2.4) { if (rm) key = 'rack3'; else { key = t < 0.9 ? (Math.floor(t * 6) % 2 ? 'rack2' : 'rack1') : 'rack3'; if (t < 0.9) rot = Math.sin(t * 14) * 0.03; } }
+        break;
+      case 'rice':
+        key = 'rice';
+        if (!rm) rot = Math.sin(tt * 1.3) * 0.03 + (t < 1.6 ? -0.45 * Math.sin(Math.min(1, t / 0.25) * Math.PI / 2) * Math.max(0, 1 - Math.max(0, t - 0.25) / 1.35) * Math.cos(Math.max(0, t - 0.25) * 6) : 0);
+        else if (t < 1) rot = -0.2;
+        break;
+      case 'scare':
+        key = 'scare1';
+        if (t < 2.2) {
+          if (rm) key = t < 1.1 ? 'scare2' : 'scare4';
+          else if (t < 1.2) key = Math.floor(t * 5) % 2 ? 'scare3' : 'scare2';
+          else { key = 'scare4'; dy = 0; }
+        } else if (!rm) rot = Math.sin(tt * 0.9) * 0.012;
+        break;
+      case 'fly': {
+        const fr = 1 + Math.floor(now / 60) % 4; key = 'dragonfly' + (rm ? 1 : fr);
+        if (!rm) {
+          const a = tt * 0.35;
+          dx = Math.cos(a) * p.r * 1.6 + Math.sin(a * 2.3) * 20; dy = Math.sin(a * 1.7) * p.r * 0.5;
+          flip = -Math.sin(a) * 1.6 + Math.cos(a * 2.3) * 0.15 < 0;
+          if (t < 1.2) { const u = t / 1.2 * Math.PI * 2; dx += Math.sin(u) * 70 * (flip ? -1 : 1); dy += -(1 - Math.cos(u)) * 55; rot = (flip ? 1 : -1) * u; }
+        } else if (t < 1) dy = -20;
+        break;
+      }
+    }
+    return { key, dx, dy, rot, pivot, alpha, h, flip, scaleX };
+  }
+  function propRect(p, pose) {
+    const im = IMGS[pose.key]; if (!im) return null;
+    let h = pose.h, w;
+    if (p.kind === 'rice') { h = p.h; w = h * 1.3; } else w = h * im.width / im.height;
+    return { x: p.x + pose.dx - w / 2, y: p.y + pose.dy - h, w, h, im };
+  }
+  function drawProps(k, now, layer) {
+    PROPS.forEach(p => {
+      if ((p.kind === 'fly' || p.kind === 'sparrow') !== (layer === 'air')) return;
+      const pose = propPose(p, now); if (!pose.key) return;
+      const r = propRect(p, pose); if (!r) return;
+      p.rect = r;
+      ctx.save(); ctx.globalAlpha = pose.alpha;
+      const px = (r.x + r.w / 2) * k, py = (pose.pivot === 'top' ? r.y : r.y + r.h) * k;
+      ctx.translate(px, py); ctx.rotate(pose.rot); if (pose.flip) ctx.scale(-1, 1); ctx.scale(pose.scaleX, 1);
+      const oy = pose.pivot === 'top' ? 0 : -r.h * k;
+      if (p.kind === 'rice') {
+        // 三根稻穗疊成一叢
+        [[-0.28, -0.25, 0.92], [0.22, 0.2, 1], [0, 0, 1.08]].forEach(([ox, a, s]) => {
+          ctx.save(); ctx.translate(ox * r.w * k * 0.5, 0); ctx.rotate(a); const hh = r.h * k * s, ww = hh * r.im.width / r.im.height;
+          ctx.drawImage(r.im, -ww * 0.3, -hh, ww, hh); ctx.restore();
+        });
+      } else ctx.drawImage(r.im, -r.w * k / 2, oy, r.w * k, r.h * k);
+      ctx.restore();
+    });
+    if (layer === 'air') drawFx(k, now);
+  }
+  function drawFx(k, now) {
+    for (let i = fx.length - 1; i >= 0; i--) {
+      const f = fx[i], t = (now - f.t0) / 1000;
+      if (t > f.life) { fx.splice(i, 1); continue; }
+    }
+    fx.forEach(f => {
+      const t = (now - f.t0) / 1000;
+      if (f.type === 'plus') {
+        const rise = reduceMotion ? 0 : t * 34, a = t < 0.15 ? t / 0.15 : Math.max(0, 1 - (t - 0.8) / 0.5);
+        const x = f.x * k, y = f.y * k - 10 - rise;
+        ctx.save(); ctx.globalAlpha = a;
+        if (IMGS.onigiri) ctx.drawImage(IMGS.onigiri, x - 22, y - 9, 16, 16);
+        ctx.font = 'bold 14px "Noto Sans TC",sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.lineWidth = 3; ctx.strokeStyle = '#fffaf0'; ctx.strokeText('+1', x - 4, y); ctx.fillStyle = '#a8741f'; ctx.fillText('+1', x - 4, y);
+        ctx.restore();
+      } else if (f.type === 'spark') {
+        const x = (f.x + f.vx * t) * k, y = (f.y + f.vy * t + 60 * t * t) * k, a = Math.max(0, 1 - t / f.life), s = 5.5 + 2.5 * Math.sin(t * 14 + f.x);
+        ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#fff3b0'; ctx.translate(x, y); ctx.rotate(t * 3);
+        ctx.beginPath(); for (let j = 0; j < 8; j++) { const rr = j % 2 ? s * 0.4 : s * 1.6, an = j * Math.PI / 4; ctx.lineTo(Math.cos(an) * rr, Math.sin(an) * rr); } ctx.closePath(); ctx.lineWidth = 1.2; ctx.strokeStyle = '#b5761a'; ctx.stroke(); ctx.fill(); ctx.restore();
+      } else if (f.type === 'drop') {
+        const im = IMGS[f.img]; if (!im) return;
+        const fall = Math.min(1, t / f.ft), y = f.y0 + (f.y1 - f.y0) * fall * fall, a = t > f.life - 0.6 ? (f.life - t) / 0.6 : 1;
+        const landed = fall >= 1, img = landed && f.land ? IMGS[f.land] : im, h = landed && f.land ? f.h * 0.7 : f.h, w = h * img.width / img.height;
+        ctx.save(); ctx.globalAlpha = Math.max(0, a); ctx.translate(f.x * k, y * k); ctx.rotate(landed ? 0 : t * f.spin); ctx.drawImage(img, -w * k / 2, -h * k, w * k, h * k); ctx.restore();
+      }
+    });
+  }
+  function tapProp(wx, wy) {
+    const now = performance.now(), padW = 22 / st.k;
+    // 由上層往下找，空中的先
+    const order = PROPS.filter(p => p.rect && p.x < st.fogX - 40).sort((a, b) => ((b.kind === 'fly' || b.kind === 'sparrow') - (a.kind === 'fly' || a.kind === 'sparrow')) || (b.y - a.y));
+    const p = order.find(p => { const r = p.rect, pw = Math.max(0, padW - r.w / 2), ph = Math.max(0, padW - r.h / 2); return wx > r.x - pw && wx < r.x + r.w + pw && wy > r.y - ph && wy < r.y + r.h + ph; });
+    if (!p) return false;
+    if (p.kind === 'smoke') { toast('炊煙裊裊，晚飯快煮好了', 1800); }
+    else {
+      const t = (now - p.t0) / 1000;
+      const busyFor = { kaki: 1.4, cat: 4.1, sparrow: 7, rack: 2.4, rice: 1.6, scare: 2.2, fly: 1.2 }[p.kind];
+      if (t > busyFor) {
+        if (p.kind === 'sparrow' && p.rect.y + p.rect.h < p.y - 30) return true;
+        p.t0 = now;
+        if (p.kind === 'kaki') fx.push({ type: 'drop', img: 'kakiFruit', land: 'kakiFallen', x: p.x - 30, y0: p.y - 10, y1: 630, ft: reduceMotion ? 0.01 : 0.7, spin: 2, h: 34, life: 4, t0: now + 300 });
+        if (p.kind === 'rice') for (let j = 0; j < (reduceMotion ? 4 : 10); j++) fx.push({ type: 'spark', x: p.x + (Math.random() - 0.5) * 50, y: p.y - p.h * (0.6 + Math.random() * 0.4), vx: reduceMotion ? 0 : (Math.random() - 0.5) * 160, vy: reduceMotion ? 0 : -60 - Math.random() * 90, life: 1 + Math.random() * 0.5, t0: now });
+      }
+    }
+    const r = p.rect;
+    if (claimBonus(p, r.x + r.w / 2, r.y)) toast(`${NAMES[p.kind]}送你一顆小飯糰，今天每樣小物都能拿一次`, 2200);
+    return true;
+  }
+
   function loadAll() {
     return Promise.all(Object.entries(srcs).map(([k, s]) => new Promise(res => {
       const im = new Image(); im.onload = () => { IMGS[k] = im; res(); }; im.onerror = () => res(); im.src = s;
@@ -197,7 +373,7 @@
     if (IMGS.far) ctx.drawImage(IMGS.far, -camX * 0.45, 0, IMG_W * k, H);
     if (IMGS.mid) ctx.drawImage(IMGS.mid, -camX, 0, IMG_W * k, H);
     ctx.save(); ctx.translate(-camX, 0);
-    drawPath(k); drawGates(k, now); drawSigns(k); drawAfan(k, now);
+    drawProps(k, now, 'ground'); drawPath(k); drawGates(k, now); drawSigns(k); drawAfan(k, now); drawProps(k, now, 'air');
     ctx.restore();
     drawNear(k);
     drawFog(k, now);
@@ -431,6 +607,7 @@
   canvas.addEventListener('pointercancel', () => { ptr = null; canvas.classList.remove('dragging'); });
   canvas.addEventListener('wheel', e => { e.preventDefault(); st.follow = false; st.camX += Math.max(-60, Math.min(60, (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY))); clampCam(); }, { passive: false });
   function tapAt(wx, wy) {
+    if (tapProp(wx, wy)) return;
     const tagPad = 70 / st.k;
     const p = POINTS.find(p => Math.abs(wx - p.sx) < 60 / st.k * 0.9 && wy > p.sy - tagPad - 40 && wy < p.sy + 60);
     if (p && p.sx < st.fogX - 40) return walkTo(p.s, p);
@@ -450,8 +627,8 @@
   window.addEventListener('resize', resize);
 
   // 測試用掛勾（Playwright 驗證）
-  window.__afan = { st, POINTS, STAGES, walkTo, sAtX, atS, tapAt, get records() { return records; } };
+  window.__afan = { PROPS, fx, get bonus() { return bonus; }, st, POINTS, STAGES, walkTo, sAtX, atS, tapAt, get records() { return records; } };
 
-  renderStages(); resize();
+  renderStages(); renderBonus(); resize();
   loadAll().then(() => { measureTops(); requestAnimationFrame(loop); });
 })();
