@@ -1,140 +1,54 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
-  <meta name="robots" content="noindex">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>阿飯餵飯糰，棚田散步地圖</title>
-  <link rel="icon" href="sprites/onigiri.png" type="image/png">
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>阿飯餵飯糰，散步地圖</title>
+<link rel="icon" href="sprites/onigiri.png" type="image/png">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="app-shell" class="app-shell" data-season="autumn">
-    <!-- Left and right ~24px edge gesture guards to avoid phone edge swipe conflict -->
-    <div class="edge-guard edge-guard-left" aria-hidden="true"></div>
-    <div class="edge-guard edge-guard-right" aria-hidden="true"></div>
+<div id="app" class="app">
+  <header class="hud">
+    <div class="hud-row">
+      <h1 class="title"><img src="sprites/onigiri.png" alt="">阿飯餵飯糰</h1>
+      <span class="ver">第四版</span>
+      <button id="reset" class="btn" type="button">重新開始</button>
+    </div>
+    <div id="stages" class="stages" aria-label="關卡進度"></div>
+  </header>
+  <main id="stage" class="stage">
+    <canvas id="scene" aria-label="散步地圖，點路面讓阿飯走過去，拖曳可捲動"></canvas>
+    <p id="toast" class="toast" aria-live="polite">點一下小路，阿飯就會沿著路走過去，左右拖曳可以看看風景</p>
+  </main>
 
-    <!-- Fixed HUD Header -->
-    <header class="hud-header">
-      <div class="hud-top-row">
-        <div class="hud-brand">
-          <span class="hud-onigiri-icon" aria-hidden="true"></span>
-          <h1 class="hud-title">阿飯餵飯糰</h1>
-          <span id="season-badge" class="season-badge">秋收金穗</span>
-        </div>
-        <div class="hud-actions">
-          <div id="feed-counter" class="feed-counter" aria-live="polite">已餵 0/4</div>
-          <button id="reset-btn" class="reset-btn" type="button">重新開始</button>
-        </div>
-      </div>
-
-      <div class="hud-sub-row">
-        <div class="season-switcher" role="group" aria-label="季節切換">
-          <button type="button" class="season-btn" data-season-select="spring">春</button>
-          <button type="button" class="season-btn" data-season-select="summer">夏</button>
-          <button type="button" class="season-btn" data-season-select="autumn">秋</button>
-          <button type="button" class="season-btn" data-season-select="winter">冬</button>
-        </div>
-        <p id="status-toast" class="status-toast" aria-live="polite">左右滑動探索棚田，尋找作品立牌收割稻穗餵阿飯吃飯糰</p>
-      </div>
-    </header>
-
-    <!-- Viewport Stage (Parallax + Particles + Scrollable World + Character) -->
-    <main class="stage-viewport" id="stage-viewport">
-      <!-- 3-Layer Parallax Background built from seasonal 棚田 artwork -->
-      <div class="parallax-stage" aria-hidden="true">
-        <div id="parallax-far" class="parallax-layer layer-far">
-          <div class="layer-image"></div>
-          <div class="mist-placeholder"></div>
-        </div>
-        <div id="parallax-mid" class="parallax-layer layer-mid">
-          <div class="layer-image"></div>
-        </div>
-        <div id="parallax-near" class="parallax-layer layer-near">
-          <!-- Mirrored tiling (alternate tiles flipped scaleX(-1)) eliminates near-layer seam -->
-          <div class="layer-image near-mirrored-strip" id="near-mirrored-strip">
-            <img class="near-tile" src="assets/autumn/near.png" alt="" draggable="false">
-            <img class="near-tile is-mirrored" src="assets/autumn/near.png" alt="" draggable="false">
-            <img class="near-tile" src="assets/autumn/near.png" alt="" draggable="false">
-            <img class="near-tile is-mirrored" src="assets/autumn/near.png" alt="" draggable="false">
-            <img class="near-tile" src="assets/autumn/near.png" alt="" draggable="false">
-          </div>
-          <div class="foreground-grass-placeholder"></div>
-        </div>
-      </div>
-
-      <!-- Seasonal Falling Particles Canvas -->
-      <canvas id="particle-canvas" class="particle-canvas" aria-hidden="true"></canvas>
-
-      <!-- Horizontal Scrolling Exploration Track -->
-      <div id="scroll-track" class="scroll-track" tabindex="0" aria-label="棚田橫向探索步道">
-        <div class="world-strip" id="world-strip">
-          <!-- Start Welcome Marker (positioned ahead and above Afan so it never overlaps) -->
-          <div class="trail-intro">
-            <div class="wooden-post">
-              <span class="post-title">棚田步道起點</span>
-              <span class="post-sub">向右滑動開始散步，抵達立牌即可收割稻穗餵食阿飯</span>
-            </div>
-          </div>
-
-          <!-- 4 Artwork Signboard Points injected by JS -->
-          <div id="points-container" class="points-container"></div>
-
-          <!-- End Marker -->
-          <div class="trail-outro">
-            <div class="wooden-post">
-              <span class="post-title">棚田展望台</span>
-              <span class="post-sub">集滿四顆飯糰，與阿飯一起欣賞四季風景</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Flying Rice Ball Animation Layer -->
-      <div id="flying-layer" class="flying-layer" aria-hidden="true"></div>
-
-      <!-- Afan Character Companion (pre-keyed back-view PNG sprites, faces right, never shows face/expression) -->
-      <!-- Known limitation: Bracelet is on right wrist; mirroring sprites via scaleX(-1) swaps it -->
-      <div id="afan-actor" class="afan-actor" aria-label="阿飯">
-        <div id="afan-bubble" class="afan-bubble" hidden>好香的飯糰，謝謝你！</div>
-        <img id="afan-sprite" class="afan-sprite state-idle" src="assets/autumn/walk_1.png" alt="阿飯" draggable="false">
-        <div class="afan-shadow"></div>
-      </div>
-
-      <!-- 10-Second Harvest Catch Minigame Overlay -->
-      <div id="harvest-overlay" class="harvest-overlay" role="dialog" aria-modal="true" aria-label="秋收接稻穗小遊戲" hidden>
-        <div class="harvest-hud">
-          <div class="harvest-stats">
-            <span id="harvest-point-label" class="harvest-point-label">作品 01</span>
-            <span id="harvest-timer" class="harvest-timer" aria-live="polite">剩餘 10 秒</span>
-            <span id="harvest-score" class="harvest-score" aria-live="polite">已收 0 束</span>
-          </div>
-          <button id="harvest-skip-btn" class="harvest-skip-btn" type="button">跳過</button>
-        </div>
-
-        <p id="harvest-hint" class="harvest-hint">左右拖曳阿飯接住落下的稻穗，稀有金穗可加三束並做成黃金飯糰</p>
-
-        <div id="harvest-playfield" class="harvest-playfield">
-          <div id="harvest-items-layer" class="harvest-items-layer" aria-hidden="true"></div>
-
-          <!-- Draggable Afan along the bottom of the harvest minigame -->
-          <div id="harvest-afan" class="harvest-afan" aria-label="拖曳阿飯接稻穗">
-            <img id="harvest-afan-sprite" class="afan-sprite state-idle" src="assets/autumn/walk_1.png" alt="阿飯" draggable="false">
-            <div class="afan-shadow"></div>
-          </div>
-        </div>
-
-        <div id="harvest-result" class="harvest-result" aria-live="assertive" hidden></div>
-      </div>
-    </main>
-
-    <!-- Bottom Progress Bar & Scroll Hint -->
-    <footer class="hud-footer">
-      <div class="progress-dots" id="progress-dots" aria-label="作品解鎖進度"></div>
-      <div class="geo-note">定位僅於手機端計算距離，不會上傳任何位置資料</div>
-    </footer>
+  <div id="harvest" class="overlay" role="dialog" aria-modal="true" aria-label="接稻穗小遊戲" hidden>
+    <div class="h-hud">
+      <span id="h-label">作品編號 01</span>
+      <span id="h-timer">剩餘 10 秒</span>
+      <span id="h-score">已收 0 束</span>
+      <button id="h-skip" class="btn" type="button">跳過</button>
+    </div>
+    <p class="h-hint">左右拖曳阿飯接住稻穗，金色稻穗加三束還能做成黃金飯糰</p>
+    <div id="h-field" class="h-field">
+      <div id="h-items"></div>
+      <div id="h-afan" class="h-afan"><img id="h-afan-img" src="scroll/afan/walk_1.png" alt="阿飯" draggable="false"></div>
+    </div>
+    <div id="h-result" class="h-result" hidden></div>
   </div>
 
-  <script src="app.js"></script>
+  <div id="card" class="overlay card-wrap" role="dialog" aria-modal="true" aria-label="收稻卡" hidden>
+    <div class="card">
+      <img src="sprites/rice_golden.png" alt="" class="card-rice">
+      <h2>收稻卡</h2>
+      <p class="card-sub">阿飯走完了入村，棚田，遠山三段小路</p>
+      <ul id="card-list" class="card-list"></ul>
+      <p id="card-date" class="card-date"></p>
+      <button id="card-close" class="btn btn-gold" type="button">收下收稻卡</button>
+    </div>
+  </div>
+</div>
+<script src="app.js"></script>
 </body>
 </html>
