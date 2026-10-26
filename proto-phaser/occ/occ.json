@@ -1,0 +1,122 @@
+{
+"rail_autumn": {
+"x": 1200,
+"y": 540,
+"base": 700
+},
+"sign0_autumn": {
+"x": 940,
+"y": 535,
+"base": 638
+},
+"sign1_autumn": {
+"x": 530,
+"y": 640,
+"base": 769
+},
+"sign2_autumn": {
+"x": 2000,
+"y": 705,
+"base": 824
+},
+"sign3_autumn": {
+"x": 2835,
+"y": 685,
+"base": 804
+},
+"sign4_autumn": {
+"x": 4000,
+"y": 595,
+"base": 712
+},
+"rail_spring": {
+"x": 1200,
+"y": 540,
+"base": 700
+},
+"sign0_spring": {
+"x": 940,
+"y": 535,
+"base": 654
+},
+"sign1_spring": {
+"x": 530,
+"y": 640,
+"base": 764
+},
+"sign2_spring": {
+"x": 2000,
+"y": 705,
+"base": 820
+},
+"sign3_spring": {
+"x": 2835,
+"y": 685,
+"base": 800
+},
+"sign4_spring": {
+"x": 4000,
+"y": 595,
+"base": 714
+},
+"rail_summer": {
+"x": 1200,
+"y": 540,
+"base": 700
+},
+"sign0_summer": {
+"x": 940,
+"y": 535,
+"base": 654
+},
+"sign1_summer": {
+"x": 530,
+"y": 640,
+"base": 769
+},
+"sign2_summer": {
+"x": 2000,
+"y": 705,
+"base": 820
+},
+"sign3_summer": {
+"x": 2835,
+"y": 685,
+"base": 800
+},
+"sign4_summer": {
+"x": 4000,
+"y": 595,
+"base": 711
+},
+"rail_winter": {
+"x": 1200,
+"y": 540,
+"base": 700
+},
+"sign0_winter": {
+"x": 940,
+"y": 535,
+"base": 654
+},
+"sign1_winter": {
+"x": 530,
+"y": 640,
+"base": 764
+},
+"sign2_winter": {
+"x": 2000,
+"y": 705,
+"base": 821
+},
+"sign3_winter": {
+"x": 2835,
+"y": 685,
+"base": 804
+},
+"sign4_winter": {
+"x": 4000,
+"y": 595,
+"base": 711
+}
+}

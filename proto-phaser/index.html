@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>阿飯餵飯糰・棚田（Phaser 試作）</title>
+<style>
+html,body{margin:0;height:100%;background:#1d1b19;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;font-family:"Noto Sans TC","PingFang TC",sans-serif}
+#game{position:fixed;inset:0}
+#game canvas{width:100%!important;height:100%!important;display:block}
+#hud{position:fixed;left:0;right:0;top:0;display:flex;gap:8px;align-items:center;padding:calc(env(safe-area-inset-top) + 8px) 12px 8px;color:#3b2a1a;pointer-events:none;z-index:5}
+#hud .t{background:rgba(255,248,232,.88);border-radius:999px;padding:6px 12px;font-size:14px;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+#hud button{pointer-events:auto;border:0;border-radius:999px;padding:6px 10px;background:rgba(255,248,232,.88);font-size:14px;color:#3b2a1a}
+#hud button.on{background:#D9A03C;color:#fff}
+#tip{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 14px);transform:translateX(-50%);background:rgba(255,248,232,.9);color:#3b2a1a;border-radius:12px;padding:8px 14px;font-size:14px;z-index:5;pointer-events:none;text-align:center;max-width:90vw}
+#toast{position:fixed;left:50%;top:22%;transform:translateX(-50%);background:rgba(59,42,26,.9);color:#fff;border-radius:12px;padding:10px 16px;font-size:15px;z-index:6;opacity:0;transition:opacity .25s;pointer-events:none}
+#toast.show{opacity:1}
+</style></head><body>
+<div id="game"></div>
+<div id="hud"><span class="t">棚田・試作</span><span style="flex:1"></span>
+<button data-s="spring">春</button><button data-s="summer">夏</button><button data-s="autumn" class="on">秋</button><button data-s="winter">冬</button></div>
+<div id="tip"></div><div id="toast"></div>
+<script src="phaser.min.js"></script>
+<script src="game.js"></script>
+</body></html>
