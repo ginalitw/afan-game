@@ -77,3 +77,97 @@ html,body{height:100%;background:#2b2118;overflow:hidden;font-family:"PingFang T
 .count{font-size:15px;color:#5a3b1c}
 @media (prefers-reduced-motion:reduce){.bush img{animation:none}.flip .face,.drop{transition:none}}
 #m-result{top:auto;bottom:24px}
+
+/* 第五版 */
+.season-pick{font-size:12px;color:#6b4a24;display:flex;align-items:center;gap:4px}
+.season-pick select{font:inherit;font-size:13px;border:1.5px solid #8a6a3c;border-radius:10px;background:#fff8e8;color:#5a3b1c;padding:2px 4px}
+.stages{overflow-x:auto;scrollbar-width:none}.stages::-webkit-scrollbar{display:none}
+.st{min-width:64px}
+.card-list{max-height:42vh;overflow-y:auto;text-align:left;font-size:13px}
+@media (max-width:520px){.title{font-size:15px}.ver{display:none}.hud-row{gap:5px}.btn{padding:4px 8px}}
+#big{background:linear-gradient(#eef4f6,#dfe9e4)}
+.b-play,.m-play{position:relative;flex:1;margin:0 16px 20px;touch-action:none;overflow:hidden;border-radius:14px}
+.oni{width:48px;height:48px}
+.shake{animation:shake .25s}
+.win .oni{animation:pop .5s ease-out}
+/* 共用場景框 */
+.field,.branch,.sky,.bank,.river,.meadow,.eave,.slope,.board{position:relative;width:min(420px,92%);height:min(300px,52vh);border-radius:14px;overflow:hidden}
+.field{background:linear-gradient(#f6ecd0,#d9c78d)}
+.sp{position:absolute;border:0;background:none;width:70px;cursor:pointer;transition:transform .8s ease-in,opacity .8s}
+.sp img,.fruit img,.leaf img{width:100%}
+.sp.gone{transform:translate(160px,-220px);opacity:0}
+.branch{background:linear-gradient(#f4e6c8,#e8d3a0)}
+.branch::before{content:"";position:absolute;left:5%;right:5%;top:14%;height:10px;background:#6e4826;border-radius:5px;transform:rotate(-3deg)}
+.fruit{position:absolute;border:0;background:none;width:48px;cursor:pointer;transition:transform .7s cubic-bezier(.5,0,1,1),opacity .2s .7s}
+.fruit.gone{transform:translateY(180px);opacity:0}
+.basket{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:110px;height:56px;background:repeating-linear-gradient(90deg,#b8864a 0 8px,#9c6d38 8px 10px);border-radius:0 0 40px 40px;display:flex;justify-content:center;align-items:flex-start}
+.basket .oni{opacity:0;margin-top:-30px}.win .basket .oni{opacity:1}
+.board{display:flex;align-items:center;justify-content:center;background:#f3ead8}
+.board img{width:100%;pointer-events:none}
+.board::after{content:"";position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%);background:url(sprites/onigiri.png) center/contain no-repeat;z-index:0}
+#m-chalk{position:absolute;left:10%;top:12%;width:80%;height:70%;border-radius:6px;z-index:1;transition:opacity .6s;touch-action:none}
+#m-chalk.gone{opacity:0}
+.desk{position:relative;border:0;background:none;width:min(340px,86%);cursor:pointer}
+.desk img{width:100%}.desk .oni{position:absolute;left:50%;top:-10px;transform:translateX(-50%) scale(0);transition:transform .4s}
+.win .desk .oni{transform:translate(-50%,-60px) scale(1)}
+.sky{background:linear-gradient(#e6eff0,#cfe0d6)}
+.leaf{position:absolute;top:-30px;width:64px;border:0;background:none;cursor:pointer;animation:leaffall 6s linear infinite}
+.leaf.gone{animation-play-state:paused;opacity:.0;transition:opacity .3s}
+@keyframes leaffall{0%{transform:translate(0,0) rotate(0)}50%{transform:translate(30px,200px) rotate(160deg)}100%{transform:translate(-10px,420px) rotate(320deg)}}
+.bank{background:linear-gradient(#e7eee8 55%,#9db7b8 55%);display:flex;align-items:flex-end;justify-content:center}
+.stone{position:relative;border:0;background:none;width:220px;margin-bottom:30px;cursor:pointer;transition:transform .6s;transform-origin:right bottom}
+.stone img,.heron img,.boat img,.sled img,.bud img{width:100%}
+.win .stone{transform:rotate(-70deg) translateY(-30px)}
+.crab{position:absolute;bottom:40px;width:90px;opacity:0;transition:opacity .4s .4s,transform .6s .4s}
+.win .crab{opacity:1;transform:translateX(-90px)}
+.heron{position:relative;border:0;background:none;width:220px;cursor:pointer;transition:transform 1.2s ease-in,opacity 1.2s}
+.win .heron{transform:translate(200px,-260px);opacity:0}
+.bank .oni{position:absolute;bottom:40px}
+.river{background:linear-gradient(#e9f0ea 30%,#a9c7cc 30%)}
+.shore{position:absolute;right:0;top:0;bottom:0;width:22%;background:#d9c78d;display:flex;align-items:center;justify-content:center}
+.boat{position:absolute;left:6%;top:48%;width:150px;border:0;background:none;cursor:pointer;transition:left .5s}
+.boat[data-k="1"]{left:22%}.boat[data-k="2"]{left:38%}.boat[data-k="3"]{left:52%}
+.meadow{background:linear-gradient(#eef3e6,#cfe0a8);display:flex;align-items:flex-end;justify-content:center}
+.flower{height:170px;margin-bottom:10px;pointer-events:none}
+.bfly{position:absolute;left:12px;top:12px;width:110px;cursor:grab;touch-action:none;animation:flap .5s ease-in-out infinite}
+.bfly.land{animation:none}
+@keyframes flap{50%{transform:scaleX(.8)}}
+.bud{border:0;background:none;width:120px;margin-bottom:10px;cursor:pointer;transform:scale(.55);transform-origin:bottom center;transition:transform .4s;filter:saturate(.4)}
+.bud[data-k="1"]{transform:scale(.7)}.bud[data-k="2"]{transform:scale(.85)}.win .bud{transform:scale(1);filter:none}
+.eave{background:linear-gradient(#eef1f4,#dfe6ec)}
+.roof{position:absolute;left:0;right:0;top:0;height:46px;border:0;background:linear-gradient(#7a5a3c,#5a3e26);cursor:pointer}
+.roof.shake{animation:shake .25s}
+.ice{position:absolute;top:40px;width:34px;transition:transform .8s cubic-bezier(.5,0,1,1),opacity .3s .8s}
+.win .ice{transform:translateY(300px);opacity:0}
+.slope{background:linear-gradient(160deg,#fbfdff 40%,#dfe8ef)}
+.sled{position:absolute;left:4%;top:12%;width:140px;border:0;background:none;cursor:pointer;transition:transform 1.2s ease-in}
+.win .sled{transform:translate(220px,170px) rotate(18deg)}
+.slope .oni{position:absolute;right:8%;bottom:10%}
+/* 大互動 */
+.b-play{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px}
+.belltime{display:flex;gap:16px;font-size:16px;color:#4a2f14;font-weight:bold}
+.bell{border:0;background:none;width:min(170px,40vw);cursor:pointer;transform-origin:top center}
+.bell img{width:100%}
+.bell.ring{animation:ring .35s}
+@keyframes ring{25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}}
+.zoo{position:relative;width:100%;height:90px}
+.zoo img{position:absolute;bottom:0;width:70px;animation:pop .4s ease-out}
+.water{position:relative;width:min(440px,94%);height:min(320px,55vh);border-radius:14px;background:linear-gradient(#e6efe9 25%,#8fb4bb 25%,#6e98a3)}
+.float{position:absolute;left:50%;top:42%;width:80px;border:0;background:none;transform:translateX(-50%);cursor:pointer;animation:bob 1.6s ease-in-out infinite}
+.float img{width:100%}
+.float.sink{animation:none;transform:translate(-50%,26px)}
+@keyframes bob{50%{transform:translate(-50%,6px)}}
+.ripple{position:absolute;left:50%;top:62%;width:140px;height:24px;margin-left:-70px;border:2px solid rgba(255,255,255,.6);border-radius:50%;animation:rip 2s ease-out infinite;pointer-events:none}
+@keyframes rip{from{transform:scale(.5);opacity:1}to{transform:scale(1.4);opacity:0}}
+.fish{position:absolute;left:50%;top:22%;width:70px;height:30px;margin-left:-35px;background:#c6a46a;border-radius:50% 40% 40% 50%;opacity:0;transition:all .4s}
+.fish::after{content:"";position:absolute;right:-16px;top:5px;border:10px solid transparent;border-left:16px solid #c6a46a}
+.fish.show{opacity:1;transform:translateY(-30px)}
+.round{position:absolute;left:10px;top:8px;font-size:14px;color:#4a2f14;font-weight:bold}
+.snowfield{position:relative;width:min(440px,94%);height:min(320px,55vh);border-radius:14px;background:linear-gradient(#f4f7fa,#dde6ee)}
+.ball,.body{position:absolute;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#e3eaf1 70%,#c9d4df);box-shadow:0 4px 6px rgba(60,80,100,.25)}
+.ball{left:20px;top:20px;cursor:grab;touch-action:none}
+.body{left:50%;bottom:20px;transform:translateX(-50%);display:none}.body.on{display:block}
+.man{position:absolute;left:50%;bottom:10px;height:85%;transform:translateX(-50%);animation:pop .5s ease-out}
+.man[hidden]{display:none}
+@media (prefers-reduced-motion:reduce){.leaf,.float,.ripple,.bfly{animation:none}.leaf{top:20%}}
+.st .row{white-space:nowrap;gap:4px}

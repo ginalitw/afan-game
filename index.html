@@ -13,7 +13,8 @@
   <header class="hud">
     <div class="hud-row">
       <h1 class="title"><img src="sprites/onigiri.png" alt="">阿飯餵飯糰</h1>
-      <span class="ver">第四版之二</span>
+      <span class="ver">第五版</span>
+      <label class="season-pick">季節 <select id="season" aria-label="季節"><option value="spring">春</option><option value="summer">夏</option><option value="autumn">秋</option><option value="winter">冬</option></select></label>
       <span id="bonus" class="bonus" title="點小物每天各拿一次">小飯糰 0</span>
       <button id="reset" class="btn" type="button">重新開始</button>
     </div>
@@ -35,7 +36,7 @@
     <div id="h-field" class="h-field">
       <div id="h-items"></div>
       <div id="h-birds"></div>
-      <div id="h-afan" class="h-afan"><img id="h-afan-img" src="scroll/afan/walk_1.png" alt="阿飯" draggable="false"></div>
+      <div id="h-afan" class="h-afan"><img id="h-afan-img" src="v5/afan/afan_walk/walk_01.webp" alt="阿飯" draggable="false"></div>
     </div>
     <div id="h-result" class="h-result" hidden></div>
   </div>
@@ -51,14 +52,25 @@
     <div id="m-result" class="h-result" hidden></div>
   </div>
 
-  <div id="card" class="overlay card-wrap" role="dialog" aria-modal="true" aria-label="收稻卡" hidden>
+  <div id="big" class="overlay" role="dialog" aria-modal="true" aria-label="關主大互動" hidden>
+    <div class="h-hud">
+      <span id="b-label">作品編號 01</span>
+      <span id="b-title"></span>
+      <button id="b-skip" class="btn" type="button">跳過</button>
+    </div>
+    <p id="b-hint" class="h-hint"></p>
+    <div id="b-play" class="b-play"></div>
+    <div id="b-result" class="h-result" hidden></div>
+  </div>
+
+  <div id="card" class="overlay card-wrap" role="dialog" aria-modal="true" aria-label="散步卡" hidden>
     <div class="card">
       <img src="sprites/rice_golden.png" alt="" class="card-rice">
-      <h2>收稻卡</h2>
-      <p class="card-sub">阿飯走完了入村，棚田，遠山三段小路</p>
+      <h2>散步卡</h2>
+      <p class="card-sub">阿飯走完了棚田，廢校與山村，清津峽，信濃川，苗場，松之山六段小路</p>
       <ul id="card-list" class="card-list"></ul>
       <p id="card-date" class="card-date"></p>
-      <button id="card-close" class="btn btn-gold" type="button">收下收稻卡</button>
+      <button id="card-close" class="btn btn-gold" type="button">收下散步卡</button>
     </div>
   </div>
 </div>
